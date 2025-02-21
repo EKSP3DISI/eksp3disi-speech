@@ -1,0 +1,24 @@
+# Web Framework
+Flask==2.3.3
+
+# HTTP Requests for API communication
+requests==2.31.0
+
+# Elevenlabs API for Conversational AI
+elevenlabs==0.2.24
+
+# Audio File Handling
+pydub==0.25.1
+ffmpeg-python==0.2.0    # A wrapper for FFmpeg (ensure FFmpeg binaries are installed)
+
+# WSGI Server for Production
+gunicorn==20.1.0
+
+# Development/Debugging Tools
+black==23.7.0
+pylint==2.17.5
+pytest==7.4.3
+python-dotenv==1.0.0
+
+# File Upload and Parsing
+Werkzeug==2.3.7
