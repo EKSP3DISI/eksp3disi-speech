@@ -5,7 +5,7 @@ Flask==2.3.3
 requests==2.31.0
 
 # Elevenlabs API for Conversational AI
-elevenlabs==0.2.24
+elevenlabs==1.51.0
 
 # Audio File Handling
 pydub==0.25.1
