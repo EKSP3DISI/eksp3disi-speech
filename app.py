@@ -38,7 +38,7 @@ async def heartbeat(websocket: WebSocketServerProtocol):
     except websockets.ConnectionClosed:
         pass
 
-async def handler(websocket: WebSocketServerProtocol):  # Remove path parameter
+async def handler(websocket: WebSocketServerProtocol):
     async with track_connection(websocket):
         client_info = f"{websocket.remote_address[0]}:{websocket.remote_address[1]}"
         logger.info(f"New connection from {client_info}")
@@ -51,36 +51,57 @@ async def handler(websocket: WebSocketServerProtocol):  # Remove path parameter
                 try:
                     message = json.loads(data)
                     
-                    if not isinstance(message, dict) or "type" not in message or "data" not in message:
+                    if not isinstance(message, dict) or "action" not in message or "data" not in message:
                         raise ValueError("Invalid message format")
                     
-                    if message["type"] == "command":
-                        command = message["data"]
-                        logger.info(f"Received command from {client_info}: {command}")
-                        
-                        if command == "start_conversation":
-                            response = {"type": "ack", "data": "Conversation started"}
-                            await websocket.send(json.dumps(response))
+                    action = message["action"]
+                    logger.info(f"Received action from {client_info}: {action}")
+                    
+                    if action == "start_listening":
+                        response = {
+                            "action": "listening_status",
+                            "data": {"is_listening": True}
+                        }
+                        await websocket.send(json.dumps(response))
                             
-                    elif message["type"] == "audio":
-                        audio_chunk = message["data"]
-                        logger.info(f"Received audio data from {client_info}: {len(audio_chunk)} bytes")
-                        # Process audio chunk here
+                    elif action == "stop_listening":
+                        response = {
+                            "action": "listening_status",
+                            "data": {"is_listening": False}
+                        }
+                        await websocket.send(json.dumps(response))
+                            
+                    elif action == "send_audio":
+                        audio_data = message["data"].get("audio")
+                        if audio_data:
+                            logger.info(f"Received audio data from {client_info}: {len(audio_data)} bytes")
+                            # TODO: Process audio data here
+                            # Send acknowledgment back to client
+                            await websocket.send(json.dumps({
+                                "action": "audio_received",
+                                "data": {"status": "success"}
+                            }))
+                        else:
+                            raise ValueError("No audio data received")
                     
                     else:
-                        logger.warning(f"Unknown message type from {client_info}: {message['type']}")
+                        logger.warning(f"Unknown action from {client_info}: {action}")
+                        await websocket.send(json.dumps({
+                            "action": "error",
+                            "data": {"message": f"Unknown action: {action}"}
+                        }))
                 
                 except json.JSONDecodeError:
                     logger.error(f"Invalid JSON received from {client_info}")
                     await websocket.send(json.dumps({
-                        "type": "error",
-                        "data": "Invalid JSON format"
+                        "action": "error",
+                        "data": {"message": "Invalid JSON format"}
                     }))
                 except Exception as e:
                     logger.error(f"Error processing message from {client_info}: {str(e)}")
                     await websocket.send(json.dumps({
-                        "type": "error",
-                        "data": "Internal server error"
+                        "action": "error",
+                        "data": {"message": "Internal server error"}
                     }))
                     
         except websockets.ConnectionClosed as e:
