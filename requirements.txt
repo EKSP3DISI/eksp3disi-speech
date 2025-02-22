@@ -3,6 +3,7 @@ Flask==2.3.3
 
 # HTTP Requests for API communication
 requests==2.31.0
+asyncio==3.4.3
 
 # Elevenlabs API for Conversational AI
 elevenlabs==1.51.0
