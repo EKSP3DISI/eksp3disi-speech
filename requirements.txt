@@ -8,7 +8,6 @@ requests==2.31.0
 elevenlabs==1.51.0
 
 # Audio File Handling
-pydub==0.25.1
 ffmpeg-python==0.2.0    # A wrapper for FFmpeg (ensure FFmpeg binaries are installed)
 
 # WSGI Server for Production
