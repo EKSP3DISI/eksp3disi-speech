@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from websockets.server import WebSocketServerProtocol
 
 # Import the speech_to_speech function from the conversational AI module
-from api.conversation import start_session, end_session, play_audio
+from api.conversation import conversation_manager
 
 # Configure logging
 logging.basicConfig(
@@ -68,21 +68,21 @@ async def handler(websocket: WebSocketServerProtocol):
 
                     if action == "start_listening":
                         # Start the conversation session
-                        start_session()
+                        conversation_manager.start_session()
                         response = {
                             "action": "listening_status",
                             "data": {"is_listening": True}
                         }
-                        await websocket.send(json.dumps(response))
+                        # await websocket.send(json.dumps(response))
 
                     elif action == "stop_listening":
                         # End the conversation session
-                        end_session()
+                        conversation_manager.end_session()
                         response = {
                             "action": "listening_status",
                             "data": {"is_listening": False}
                         }
-                        await websocket.send(json.dumps(response))
+                        # await websocket.send(json.dumps(response))
 
                     elif action == "audio_data":
                         audio_data = message["data"].get("audio")
@@ -104,18 +104,12 @@ async def handler(websocket: WebSocketServerProtocol):
                                 # Create task to play audio asynchronously
                                 asyncio.create_task(
                                     asyncio.to_thread(
-                                        play_audio,
+                                        conversation_manager.play_audio,
                                         audio_bytes,
                                         sample_rate=44100,  # Match your client's sample rate
                                         blocking=False
                                     )
                                 )
-
-                                # Send acknowledgment back to client
-                                await websocket.send(json.dumps({
-                                    "action": "audio_received",
-                                    "data": {"status": "success"}
-                                }))
                             except Exception as e:
                                 logger.error(f"Error processing audio data: {str(e)}")
                                 raise ValueError(f"Invalid audio data format: {str(e)}")
