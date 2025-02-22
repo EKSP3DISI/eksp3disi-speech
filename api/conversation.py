@@ -7,45 +7,61 @@ from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import Conversation
 from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
 
-# Load environment variables
-load_dotenv()
 
-# Set your API key and initialize client
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-if not ELEVENLABS_API_KEY:
-    raise ValueError("ELEVENLABS_API_KEY environment variable is not set")
-# Set your agent ID
-agent_id = os.getenv("ELEVENLABS_AGENT_ID")
+class ConversationManager:
+    _instance = None
 
-client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ConversationManager, cls).__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
 
-conversation = Conversation(
-    # API client and agent ID.
-    client,
-    agent_id,
+    def _initialize(self):
+        # Load environment variables
+        load_dotenv()
 
-    # Assume auth is required when API_KEY is set.
-    requires_auth=True,
+        # Set your API key and initialize client
+        self.api_key = os.getenv("ELEVENLABS_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "ELEVENLABS_API_KEY environment variable is not set")
 
-    # Use the default audio interface.
-    audio_interface=DefaultAudioInterface(),
+        # Set your agent ID
+        self.agent_id = os.getenv("ELEVENLABS_AGENT_ID")
 
-    # Simple callbacks that print the conversation to the console.
-    callback_agent_response=lambda response: print(f"Agent: {response}"),
-    callback_agent_response_correction=lambda original, corrected: print(
-        f"Agent: {original} -> {corrected}"),
-    callback_user_transcript=lambda transcript: print(f"User: {transcript}"),
+        # Initialize ElevenLabs client
+        self.client = ElevenLabs(api_key=self.api_key)
 
-    # Uncomment if you want to see latency measurements.
-    # callback_latency_measurement=lambda latency: print(f"Latency: {latency}ms"),
-)
+    def start_session(self):
+        # Initialize conversation
+        self.conversation = Conversation(
+            self.client,
+            self.agent_id,
+            requires_auth=True,
+            audio_interface=DefaultAudioInterface(),
+            callback_agent_response=lambda response: print(
+                f"Agent: {response}"),
+            callback_agent_response_correction=lambda original, corrected: print(
+                f"Agent: {original} -> {corrected}"),
+            callback_user_transcript=lambda transcript: print(
+                f"User: {transcript}"),
+        )
+        """Start a new conversation session"""
+        self.conversation.start_session()
+        signal.signal(signal.SIGINT, lambda sig, frame: self.end_session())
 
-def start_session():
-    conversation.start_session()
-    
-def end_session():
-    conversation.end_session()
-    conversation.wait_for_session_end()
+    def end_session(self):
+        """End the current conversation session"""
+        self.conversation.end_session()
+        conversation_id = self.conversation.wait_for_session_end()
+        print(f"Conversation ID: {conversation_id}")
 
-def play_audio(audio_data: bytes, sample_rate: Optional[int] = None, blocking: bool = False):
-    play(audio_data)
+    @staticmethod
+    def play_audio(audio_data: bytes, sample_rate: Optional[int] = None, blocking: bool = False):
+        """Play audio data"""
+        play(audio_data)
+
+
+# Create a global instance
+conversation_manager = ConversationManager()
